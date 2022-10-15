@@ -42,6 +42,12 @@
     <ClCompile Include="engine\GameLevel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="engine\BallObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\util\ParticleGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine\core\Texture.h">
@@ -65,6 +71,12 @@
     <ClInclude Include="engine\GameLevel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="engine\BallObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\util\ParticleGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\sprite_render_vs.glsl" />
@@ -73,5 +85,7 @@
     <None Include="levels\2.lvl" />
     <None Include="levels\3.lvl" />
     <None Include="levels\4.lvl" />
+    <None Include="shaders\particle_render_vs.glsl" />
+    <None Include="shaders\particle_render_fs.glsl" />
   </ItemGroup>
 </Project>

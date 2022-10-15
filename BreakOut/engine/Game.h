@@ -14,13 +14,23 @@
 
 #include "util/ResourceManager.h"
 #include "util/SpriteRenderer.h"
+#include "util/ParticleGenerator.h"
 
 #include "GameLevel.h"
+#include "GameObject.h"
+#include "BallObject.h"
 
 enum GameState
 {
 	ACTIVE, ON_MENU, VICTORY
 };
+
+enum Direction
+{
+	UP, RIGHT, DOWN, LEFT
+};
+
+typedef std::tuple<bool, Direction, glm::vec2> Collision;
 
 class Game
 {
@@ -34,6 +44,10 @@ public:
 	void render();
 
 	void setKeyState(int index, bool pressed);
+	void doCollision();
+
+	void resetLevel();
+	void resetPlayer();
 
 private:
 	unsigned int m_ScreenWidth, m_ScreenHeight;
@@ -42,4 +56,7 @@ private:
 
 	std::vector<GameLevel> m_Levels;
 	unsigned int m_CurrentLevel;
+
+	Collision checkCollision(BallObject& ball, GameObject& aabb);
+	Direction getCollisionDirection(glm::vec2 target);
 };

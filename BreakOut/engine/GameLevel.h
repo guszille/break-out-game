@@ -11,6 +11,8 @@
 class GameLevel
 {
 public:
+	std::vector<GameObject> m_Bricks;
+
 	GameLevel();
 
 	~GameLevel();
@@ -22,7 +24,5 @@ public:
 	bool isCompleted();
 
 private:
-	std::vector<GameObject> m_Bricks;
-
 	void initialize(std::vector<std::vector<unsigned int>> tileSetData, unsigned int levelWidth, unsigned int levelHeight);
 };

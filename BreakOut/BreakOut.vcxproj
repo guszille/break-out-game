@@ -147,22 +147,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="engine\BallObject.cpp" />
     <ClCompile Include="engine\core\ShaderProgram.cpp" />
     <ClCompile Include="engine\core\Texture.cpp" />
     <ClCompile Include="engine\Game.cpp" />
     <ClCompile Include="engine\GameLevel.cpp" />
     <ClCompile Include="engine\GameObject.cpp" />
+    <ClCompile Include="engine\util\ParticleGenerator.cpp" />
     <ClCompile Include="engine\util\ResourceManager.cpp" />
     <ClCompile Include="engine\util\SpriteRenderer.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="vendor\source\glad\glad.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="engine\BallObject.h" />
     <ClInclude Include="engine\core\ShaderProgram.h" />
     <ClInclude Include="engine\core\Texture.h" />
     <ClInclude Include="engine\Game.h" />
     <ClInclude Include="engine\GameLevel.h" />
     <ClInclude Include="engine\GameObject.h" />
+    <ClInclude Include="engine\util\ParticleGenerator.h" />
     <ClInclude Include="engine\util\ResourceManager.h" />
     <ClInclude Include="engine\util\SpriteRenderer.h" />
   </ItemGroup>
@@ -171,6 +175,8 @@
     <None Include="levels\2.lvl" />
     <None Include="levels\3.lvl" />
     <None Include="levels\4.lvl" />
+    <None Include="shaders\particle_render_fs.glsl" />
+    <None Include="shaders\particle_render_vs.glsl" />
     <None Include="shaders\sprite_render_fs.glsl" />
     <None Include="shaders\sprite_render_vs.glsl" />
   </ItemGroup>
