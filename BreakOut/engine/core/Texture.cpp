@@ -64,6 +64,22 @@ Texture::Texture(const char* filepath, const bool gammaCorrection)
 	stbi_image_free(data);
 }
 
+Texture::Texture(unsigned int width, unsigned int height)
+	: m_ID(), m_Width(width), m_Height(height), m_ColorChannels(3)
+{
+	glGenTextures(1, &m_ID);
+	glBindTexture(GL_TEXTURE_2D, m_ID);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 Texture::~Texture()
 {
 }
@@ -89,4 +105,9 @@ void Texture::bind(int unit)
 void Texture::unbind()
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+unsigned int Texture::getId()
+{
+	return m_ID;
 }

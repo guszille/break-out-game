@@ -15,6 +15,7 @@ class Texture
 public:
 	Texture();
 	Texture(const char* filepath, const bool gammaCorrection = false);
+	Texture(unsigned int width, unsigned int height);
 	
 	~Texture();
 
@@ -22,6 +23,8 @@ public:
 
 	void bind(int unit);
 	void unbind();
+
+	unsigned int getId();
 
 private:
 	unsigned int m_ID;

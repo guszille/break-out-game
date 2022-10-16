@@ -150,6 +150,48 @@ void ShaderProgram::setUniform4f(const char* uniformName, const glm::vec4& data)
 	}
 }
 
+void ShaderProgram::setUniform1iv(const char* uniformName, int count, const int* data)
+{
+	int uniformLocation = glGetUniformLocation(m_ID, uniformName);
+
+	if (uniformLocation > -1)
+	{
+		glUniform1iv(uniformLocation, count, data);
+	}
+	else
+	{
+		std::cout << "[ERROR] SHADER PROGRAM: Failed to get location of uniform \"" << uniformName << "\"" << std::endl;
+	}
+}
+
+void ShaderProgram::setUniform1fv(const char* uniformName, int count, const float* data)
+{
+	int uniformLocation = glGetUniformLocation(m_ID, uniformName);
+
+	if (uniformLocation > -1)
+	{
+		glUniform1fv(uniformLocation, count, data);
+	}
+	else
+	{
+		std::cout << "[ERROR] SHADER PROGRAM: Failed to get location of uniform \"" << uniformName << "\"" << std::endl;
+	}
+}
+
+void ShaderProgram::setUniform2fv(const char* uniformName, int count, const float* data)
+{
+	int uniformLocation = glGetUniformLocation(m_ID, uniformName);
+
+	if (uniformLocation > -1)
+	{
+		glUniform2fv(uniformLocation, count, data);
+	}
+	else
+	{
+		std::cout << "[ERROR] SHADER PROGRAM: Failed to get location of uniform \"" << uniformName << "\"" << std::endl;
+	}
+}
+
 void ShaderProgram::setUniformMatrix4fv(const char* uniformName, const glm::mat4& data)
 {
 	int uniformLocation = glGetUniformLocation(m_ID, uniformName);

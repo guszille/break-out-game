@@ -15,6 +15,7 @@
 #include "util/ResourceManager.h"
 #include "util/SpriteRenderer.h"
 #include "util/ParticleGenerator.h"
+#include "util/PostProcessor.h"
 
 #include "GameLevel.h"
 #include "GameObject.h"

@@ -1,18 +1,17 @@
 #include "Game.h"
 
 SpriteRenderer* g_Renderer;
-
 GameObject* g_Player;
+BallObject* g_Ball;
+ParticleGenerator* g_ParticleGenerator;
+PostProcessor* g_Effects;
 
 const glm::vec2 g_PlayerSize(100.0f, 20.0f);
 const float g_PlayerVelocity(500.0f);
-
-BallObject* g_Ball;
-
 const glm::vec2 g_InitialBallVelocity(100.0f, -350.0f);
 const float g_BallRadius = 12.5f;
 
-ParticleGenerator* g_ParticleGenerator;
+float g_ShakeTime = 0.0f;
 
 Game::Game(unsigned int width, unsigned int height)
 	: m_ScreenWidth(width), m_ScreenHeight(height), m_KeysPressed(), m_State(GameState::ACTIVE), m_CurrentLevel(0)
@@ -22,6 +21,10 @@ Game::Game(unsigned int width, unsigned int height)
 Game::~Game()
 {
 	delete g_Renderer;
+	delete g_Player;
+	delete g_Ball;
+	delete g_ParticleGenerator;
+	delete g_Effects;
 }
 
 void Game::setup()
@@ -30,6 +33,7 @@ void Game::setup()
 
 	ShaderProgram spriteRenderSP("shaders/sprite_render_vs.glsl", "shaders/sprite_render_fs.glsl");
 	ShaderProgram particleRenderSP("shaders/particle_render_vs.glsl", "shaders/particle_render_fs.glsl");
+	ShaderProgram effectsRenderSP("shaders/postprocess_render_vs.glsl", "shaders/postprocess_render_fs.glsl");
 
 	spriteRenderSP.bind();
 	spriteRenderSP.setUniformMatrix4fv("uProjectionMatrix", projectionMatrix);
@@ -43,6 +47,7 @@ void Game::setup()
 
 	ResourceManager::setShaderProgram("particleRenderSP", particleRenderSP);
 	ResourceManager::setShaderProgram("particleRenderSP", particleRenderSP);
+	ResourceManager::setShaderProgram("effectsRenderSP", effectsRenderSP);
 
 	Texture awesomefaceTex("textures/awesomeface.png");
 	Texture backgroundTex("textures/background.jpg");
@@ -84,6 +89,8 @@ void Game::setup()
 	g_Renderer = new SpriteRenderer(spriteRenderSP);
 
 	g_ParticleGenerator = new ParticleGenerator(particleRenderSP, paddleTex, 500);
+
+	g_Effects = new PostProcessor(effectsRenderSP, m_ScreenWidth, m_ScreenHeight);
 }
 
 void Game::processInput(float deltaTime)
@@ -127,20 +134,27 @@ void Game::processInput(float deltaTime)
 
 void Game::update(float deltaTime)
 {
-	// Update ball movement.
 	g_Ball->move(deltaTime, m_ScreenWidth);
 
-	// Do ball collision.
-	doCollision();
+	doCollision();  // Do ball collision.
+
+	g_ParticleGenerator->update(deltaTime, *g_Ball, 2, glm::vec2(g_Ball->m_Radius / 2.0f));
+
+	if (g_ShakeTime > 0.0f)
+	{
+		g_ShakeTime -= deltaTime;
+
+		if (g_ShakeTime <= 0.0f)
+		{
+			g_Effects->m_ShakeEffect = false;
+		}
+	}
 
 	if (g_Ball->m_Position.y >= m_ScreenHeight)
 	{
 		resetLevel();
 		resetPlayer();
 	}
-
-	// Update particles.
-	g_ParticleGenerator->update(deltaTime, *g_Ball, 2, glm::vec2(g_Ball->m_Radius / 2.0f));
 }
 
 void Game::render()
@@ -148,6 +162,8 @@ void Game::render()
 	if (m_State == GameState::ACTIVE)
 	{
 		Texture backgroundTex = ResourceManager::getTexture("backgroundTex");
+
+		g_Effects->beginRender();
 
 		g_Renderer->draw(backgroundTex, glm::vec2(0.0f, 0.0f), 0.0f, glm::vec2(m_ScreenWidth, m_ScreenHeight));
 
@@ -158,6 +174,9 @@ void Game::render()
 		g_ParticleGenerator->draw(); // WARNING: Render particles before the ball.
 
 		g_Ball->draw(*g_Renderer);
+
+		g_Effects->endRender();
+		g_Effects->render(glfwGetTime());
 	}
 }
 
@@ -180,6 +199,12 @@ void Game::doCollision()
 				if (!brick.m_Solid)
 				{
 					brick.m_Destroyed = true;
+				}
+				else
+				{
+					g_ShakeTime = 0.05f;
+
+					g_Effects->m_ShakeEffect = true;
 				}
 
 				Direction direction = std::get<1>(coll);

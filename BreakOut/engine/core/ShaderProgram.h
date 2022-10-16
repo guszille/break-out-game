@@ -31,6 +31,11 @@ public:
 	void setUniform3f(const char* uniformName, const glm::vec3& data);
 	void setUniform4f(const char* uniformName, const glm::vec4& data);
 
+	void setUniform1iv(const char* uniformName, int count, const int* data);
+
+	void setUniform1fv(const char* uniformName, int count, const float* data);
+	void setUniform2fv(const char* uniformName, int count, const float* data);
+
 	void setUniformMatrix4fv(const char* uniformName, const glm::mat4& data);
 
 private:
