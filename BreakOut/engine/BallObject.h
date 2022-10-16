@@ -12,6 +12,7 @@ public:
 	float m_Radius;
 
 	bool m_Stuck;
+	bool m_StickyEffect, m_PassThroughEffect;
 
 	BallObject();
 	BallObject(Texture sprite, glm::vec2 position, float radius, glm::vec2 velocity);

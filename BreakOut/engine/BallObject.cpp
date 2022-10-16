@@ -1,12 +1,12 @@
 #include "BallObject.h"
 
 BallObject::BallObject()
-	: GameObject(), m_Radius(12.5f), m_Stuck(true)
+	: GameObject(), m_Radius(12.5f), m_Stuck(true), m_StickyEffect(false), m_PassThroughEffect(false)
 {
 }
 
 BallObject::BallObject(Texture sprite, glm::vec2 position, float radius, glm::vec2 velocity)
-	: GameObject(sprite, position, glm::vec2(radius * 2.0f, radius * 2.0f), glm::vec3(1.0f), velocity), m_Radius(radius), m_Stuck(true)
+	: GameObject(sprite, position, glm::vec2(radius * 2.0f, radius * 2.0f), glm::vec3(1.0f), velocity), m_Radius(radius), m_Stuck(true), m_StickyEffect(false), m_PassThroughEffect(false)
 {
 }
 
@@ -46,4 +46,6 @@ void BallObject::reset(glm::vec2 position, glm::vec2 velocity)
 	m_Position = position;
 	m_Velocity = velocity;
 	m_Stuck = true;
+    m_StickyEffect = false;
+    m_PassThroughEffect = false;
 }

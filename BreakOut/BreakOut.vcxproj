@@ -153,6 +153,7 @@
     <ClCompile Include="engine\Game.cpp" />
     <ClCompile Include="engine\GameLevel.cpp" />
     <ClCompile Include="engine\GameObject.cpp" />
+    <ClCompile Include="engine\PowerUp.cpp" />
     <ClCompile Include="engine\util\ParticleGenerator.cpp" />
     <ClCompile Include="engine\util\PostProcessor.cpp" />
     <ClCompile Include="engine\util\ResourceManager.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="engine\Game.h" />
     <ClInclude Include="engine\GameLevel.h" />
     <ClInclude Include="engine\GameObject.h" />
+    <ClInclude Include="engine\PowerUp.h" />
     <ClInclude Include="engine\util\ParticleGenerator.h" />
     <ClInclude Include="engine\util\PostProcessor.h" />
     <ClInclude Include="engine\util\ResourceManager.h" />

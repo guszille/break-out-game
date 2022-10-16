@@ -48,6 +48,12 @@
     <ClCompile Include="engine\util\ParticleGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="engine\util\PostProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\PowerUp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine\core\Texture.h">
@@ -77,6 +83,12 @@
     <ClInclude Include="engine\util\ParticleGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="engine\util\PostProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\PowerUp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\sprite_render_vs.glsl" />
@@ -87,5 +99,7 @@
     <None Include="levels\4.lvl" />
     <None Include="shaders\particle_render_vs.glsl" />
     <None Include="shaders\particle_render_fs.glsl" />
+    <None Include="shaders\postprocess_render_fs.glsl" />
+    <None Include="shaders\postprocess_render_vs.glsl" />
   </ItemGroup>
 </Project>

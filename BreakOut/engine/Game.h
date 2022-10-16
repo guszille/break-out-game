@@ -20,6 +20,7 @@
 #include "GameLevel.h"
 #include "GameObject.h"
 #include "BallObject.h"
+#include "PowerUp.h"
 
 enum GameState
 {
@@ -58,6 +59,15 @@ private:
 	std::vector<GameLevel> m_Levels;
 	unsigned int m_CurrentLevel;
 
-	Collision checkCollision(BallObject& ball, GameObject& aabb);
+	std::vector<PowerUp> m_PowerUps;
+
+	bool checkCollision(GameObject& one, GameObject& two); // AABB - AABB
+	Collision checkCollision(BallObject& ball, GameObject& aabb); // AABB - Circle
 	Direction getCollisionDirection(glm::vec2 target);
+
+	void spawnPowerUps(GameObject& block);
+	void updatePowerUps(float deltaTime);
+	bool shouldSpawnPowerUp(unsigned int chance);
+	void activatePowerUp(PowerUp& powerUp);
+	bool isOtherPowerUpActive(std::vector<PowerUp>& powerUps, std::string type);
 };

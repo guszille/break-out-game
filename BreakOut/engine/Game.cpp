@@ -56,12 +56,26 @@ void Game::setup()
 	Texture paddleTex("textures/paddle.png");
 	Texture particleTex("textures/particle.png");
 
+	Texture powerUpSpeedTex("textures/powerups/powerup_speed.png");
+	Texture powerUpStickyTex("textures/powerups/powerup_sticky.png");
+	Texture powerUpIncreaseTex("textures/powerups/powerup_increase.png");
+	Texture powerUpChaosTex("textures/powerups/powerup_chaos.png");
+	Texture powerUpConfuseTex("textures/powerups/powerup_confuse.png");
+	Texture powerUpPassThroughTex("textures/powerups/powerup_passthrough.png");
+
 	ResourceManager::setTexture("awesomefaceTex", awesomefaceTex);
 	ResourceManager::setTexture("backgroundTex", backgroundTex);
 	ResourceManager::setTexture("solidBlock", solidBlockTex);
 	ResourceManager::setTexture("destructibleBlock", blockTex);
 	ResourceManager::setTexture("paddleTex", paddleTex);
 	ResourceManager::setTexture("particleTex", particleTex);
+
+	ResourceManager::setTexture("powerUpSpeedTex", powerUpSpeedTex);
+	ResourceManager::setTexture("powerUpStickyTex", powerUpStickyTex);
+	ResourceManager::setTexture("powerUpIncreaseTex", powerUpIncreaseTex);
+	ResourceManager::setTexture("powerUpChaosTex", powerUpChaosTex);
+	ResourceManager::setTexture("powerUpConfuseTex", powerUpConfuseTex);
+	ResourceManager::setTexture("powerUpPassThroughTex", powerUpPassThroughTex);
 
 	GameLevel levelOne;
 	GameLevel levelTwo;
@@ -140,6 +154,8 @@ void Game::update(float deltaTime)
 
 	g_ParticleGenerator->update(deltaTime, *g_Ball, 2, glm::vec2(g_Ball->m_Radius / 2.0f));
 
+	updatePowerUps(deltaTime); // Update all power-ups states.
+
 	if (g_ShakeTime > 0.0f)
 	{
 		g_ShakeTime -= deltaTime;
@@ -165,15 +181,25 @@ void Game::render()
 
 		g_Effects->beginRender();
 
-		g_Renderer->draw(backgroundTex, glm::vec2(0.0f, 0.0f), 0.0f, glm::vec2(m_ScreenWidth, m_ScreenHeight));
+		{
+			g_Renderer->draw(backgroundTex, glm::vec2(0.0f, 0.0f), 0.0f, glm::vec2(m_ScreenWidth, m_ScreenHeight));
 
-		m_Levels[m_CurrentLevel].draw(*g_Renderer);
+			m_Levels[m_CurrentLevel].draw(*g_Renderer);
 
-		g_Player->draw(*g_Renderer);
+			g_Player->draw(*g_Renderer);
 
-		g_ParticleGenerator->draw(); // WARNING: Render particles before the ball.
+			for (PowerUp& powerUp : m_PowerUps)
+			{
+				if (!powerUp.m_Destroyed)
+				{
+					powerUp.draw(*g_Renderer);
+				}
+			}
 
-		g_Ball->draw(*g_Renderer);
+			g_ParticleGenerator->draw(); // WARNING: Render particles before the ball.
+
+			g_Ball->draw(*g_Renderer);
+		}
 
 		g_Effects->endRender();
 		g_Effects->render(glfwGetTime());
@@ -199,6 +225,8 @@ void Game::doCollision()
 				if (!brick.m_Solid)
 				{
 					brick.m_Destroyed = true;
+
+					spawnPowerUps(brick);
 				}
 				else
 				{
@@ -210,36 +238,60 @@ void Game::doCollision()
 				Direction direction = std::get<1>(coll);
 				glm::vec2 differece = std::get<2>(coll);
 
-				if (direction == Direction::LEFT || direction == Direction::RIGHT) // Horizontal collision.
+				if (!(g_Ball->m_PassThroughEffect && !brick.m_Solid))
 				{
-					g_Ball->m_Velocity.x = -g_Ball->m_Velocity.x;
-
-					float penetration = g_Ball->m_Radius - std::abs(differece.x);
-
-					if (direction == Direction::LEFT)
+					if (direction == Direction::LEFT || direction == Direction::RIGHT) // Horizontal collision.
 					{
-						g_Ball->m_Position.x += penetration;
+						g_Ball->m_Velocity.x = -g_Ball->m_Velocity.x;
+
+						float penetration = g_Ball->m_Radius - std::abs(differece.x);
+
+						if (direction == Direction::LEFT)
+						{
+							g_Ball->m_Position.x += penetration;
+						}
+						else
+						{
+							g_Ball->m_Position.x -= penetration;
+						}
 					}
-					else
+					else // Vertical collision.
 					{
-						g_Ball->m_Position.x -= penetration;
+						g_Ball->m_Velocity.y = -g_Ball->m_Velocity.y;
+
+						float penetration = g_Ball->m_Radius - std::abs(differece.y);
+
+						if (direction == Direction::UP)
+						{
+							g_Ball->m_Position.y -= penetration;
+						}
+						else
+						{
+							g_Ball->m_Position.y += penetration;
+						}
 					}
 				}
-				else // Vertical collision.
-				{
-					g_Ball->m_Velocity.y = -g_Ball->m_Velocity.y;
+			}
+		}
+	}
 
-					float penetration = g_Ball->m_Radius - std::abs(differece.y);
+	// Check collision with the power-ups.
+	for (PowerUp& powerUp : m_PowerUps)
+	{
+		if (!powerUp.m_Destroyed)
+		{
+			if (powerUp.m_Position.y >= m_ScreenHeight)
+			{
+				powerUp.m_Destroyed = true;
 
-					if (direction == Direction::UP)
-					{
-						g_Ball->m_Position.y -= penetration;
-					}
-					else
-					{
-						g_Ball->m_Position.y += penetration;
-					}
-				}
+			}
+
+			if (checkCollision(*g_Player, powerUp))
+			{
+				activatePowerUp(powerUp);
+
+				powerUp.m_Destroyed = true;
+				powerUp.m_Activated = true;
 			}
 		}
 	}
@@ -258,6 +310,8 @@ void Game::doCollision()
 		glm::vec2 newVelocity(g_InitialBallVelocity.x * percentage * strength, -1.0f * abs(g_Ball->m_Velocity.y));
 
 		g_Ball->m_Velocity = glm::normalize(newVelocity) * glm::length(currentVelocity);
+
+		g_Ball->m_Stuck = g_Ball->m_StickyEffect;
 	}
 }
 
@@ -289,6 +343,23 @@ void Game::resetPlayer()
 	g_Player->m_Position = glm::vec2(m_ScreenWidth / 2.0f - g_PlayerSize.x / 2.0f, m_ScreenHeight - g_PlayerSize.y);
 	
 	g_Ball->reset(g_Player->m_Position + glm::vec2(g_PlayerSize.x / 2.0f - g_BallRadius, -(g_BallRadius * 2.0f)), g_InitialBallVelocity);
+
+	g_Effects->m_ChaosEffect = false;
+	g_Effects->m_ConfuseEffect = false;
+
+	g_Player->m_Color = glm::vec3(1.0f);
+
+	g_Ball->m_Color = glm::vec3(1.0f);
+	g_Ball->m_StickyEffect = false;
+	g_Ball->m_PassThroughEffect = false;
+}
+
+bool Game::checkCollision(GameObject& one, GameObject& two)
+{
+	bool collisionX = one.m_Position.x + one.m_Size.x >= two.m_Position.x && two.m_Position.x + two.m_Size.x >= one.m_Position.x;
+	bool collisionY = one.m_Position.y + one.m_Size.y >= two.m_Position.y && two.m_Position.y + two.m_Size.y >= one.m_Position.y;
+
+	return collisionX && collisionY;
 }
 
 Collision Game::checkCollision(BallObject& ball, GameObject& aabb)
@@ -338,4 +409,164 @@ Direction Game::getCollisionDirection(glm::vec2 target)
 	}
 
 	return (Direction)bestMatch;
+}
+
+void Game::spawnPowerUps(GameObject& block)
+{
+	if (shouldSpawnPowerUp(75))
+	{
+		Texture powerUpSpeedTex = ResourceManager::getTexture("powerUpSpeedTex");
+
+		m_PowerUps.push_back(PowerUp("speed", 0.0f, powerUpSpeedTex, block.m_Position, glm::vec3(0.5f, 0.5f, 1.0f)));
+	}
+
+	if (shouldSpawnPowerUp(75))
+	{
+		Texture powerUpStickyTex = ResourceManager::getTexture("powerUpStickyTex");
+
+		m_PowerUps.push_back(PowerUp("sticky", 20.0f, powerUpStickyTex, block.m_Position, glm::vec3(1.0f, 0.5f, 1.0f)));
+	}
+
+	if (shouldSpawnPowerUp(75))
+	{
+		Texture powerUpPassThroughTex = ResourceManager::getTexture("powerUpPassThroughTex");
+
+		m_PowerUps.push_back(PowerUp("passThrough", 10.0f, powerUpPassThroughTex, block.m_Position, glm::vec3(0.5f, 1.0f, 0.5f)));
+	}
+
+	if (shouldSpawnPowerUp(75))
+	{
+		Texture powerUpIncreaseTex = ResourceManager::getTexture("powerUpIncreaseTex");
+
+		m_PowerUps.push_back(PowerUp("padSizeIncrease", 0.0f, powerUpIncreaseTex, block.m_Position, glm::vec3(1.0f, 0.6f, 0.4f)));
+	}
+
+	if (shouldSpawnPowerUp(15))
+	{
+		Texture powerUpChaosTex = ResourceManager::getTexture("powerUpChaosTex");
+
+		m_PowerUps.push_back(PowerUp("chaos", 15.0f, powerUpChaosTex, block.m_Position, glm::vec3(0.9f, 0.25f, 0.25f)));
+	}
+
+	if (shouldSpawnPowerUp(15))
+	{
+		Texture powerUpConfuseTex = ResourceManager::getTexture("powerUpConfuseTex");
+
+		m_PowerUps.push_back(PowerUp("confuse", 15.0f, powerUpConfuseTex, block.m_Position, glm::vec3(1.0f, 0.3f, 0.3f)));
+	}
+}
+
+void Game::updatePowerUps(float deltaTime)
+{
+	for (PowerUp& powerUp : m_PowerUps)
+	{
+		powerUp.m_Position += powerUp.m_Velocity * deltaTime;
+
+		if (powerUp.m_Activated)
+		{
+			powerUp.m_Duration -= deltaTime;
+
+			if (powerUp.m_Duration <= 0.0f)
+			{
+				powerUp.m_Activated = false;
+
+				if (powerUp.m_Type == "sticky")
+				{
+					if (!isOtherPowerUpActive(m_PowerUps, "sticky"))
+					{
+						g_Player->m_Color = glm::vec3(1.0f);
+						g_Ball->m_StickyEffect = false;
+					}
+				}
+				else if (powerUp.m_Type == "passThrough")
+				{
+					if (!isOtherPowerUpActive(m_PowerUps, "passThrough"))
+					{
+						g_Ball->m_Color = glm::vec3(1.0f);
+						g_Ball->m_PassThroughEffect = false;
+					}
+				}
+				else if (powerUp.m_Type == "chaos")
+				{
+					if (!isOtherPowerUpActive(m_PowerUps, "chaos"))
+					{
+						g_Effects->m_ChaosEffect = false;
+					}
+				}
+				else if (powerUp.m_Type == "confuse")
+				{
+					if (!isOtherPowerUpActive(m_PowerUps, "confuse"))
+					{
+						g_Effects->m_ConfuseEffect = false;
+					}
+				}
+			}
+		}
+	}
+
+	// Remove all power-ups that are destroyed and not activated.
+	m_PowerUps.erase(std::remove_if(
+		m_PowerUps.begin(),
+		m_PowerUps.end(),
+		[](const PowerUp& powerUp) { return powerUp.m_Destroyed && !powerUp.m_Activated; }
+	), m_PowerUps.end());
+}
+
+bool Game::shouldSpawnPowerUp(unsigned int chance)
+{
+	unsigned int random = rand() % chance;
+
+	return random == 0;
+}
+
+void Game::activatePowerUp(PowerUp& powerUp)
+{
+	if (powerUp.m_Type == "speed")
+	{
+		g_Ball->m_Velocity *= 1.2f;
+	}
+	else if (powerUp.m_Type == "sticky")
+	{
+		g_Player->m_Color = glm::vec3(1.0f, 0.5f, 1.0f);
+		g_Ball->m_StickyEffect = true;
+	}
+	else if (powerUp.m_Type == "passThrough")
+	{
+		g_Ball->m_Color = glm::vec3(1.0f, 0.5f, 0.5f);
+		g_Ball->m_PassThroughEffect = true;
+	}
+	else if (powerUp.m_Type == "padSizeIncrease")
+	{
+		g_Player->m_Size.x += 50;
+	}
+	else if (powerUp.m_Type == "chaos")
+	{
+		if (!g_Effects->m_ConfuseEffect)
+		{
+			g_Effects->m_ChaosEffect = true; // Only activate if "confuse" wasn't already active.
+		}
+	}
+	else if (powerUp.m_Type == "confuse")
+	{
+		if (!g_Effects->m_ChaosEffect)
+		{
+			g_Effects->m_ConfuseEffect = true; // Only activate if "chaos" wasn't already active.
+		}
+	}
+}
+
+bool Game::isOtherPowerUpActive(std::vector<PowerUp>& powerUps, std::string type)
+{
+	for (const PowerUp& powerUp : powerUps)
+	{
+		if (powerUp.m_Activated)
+		{
+			if (powerUp.m_Type == type)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
