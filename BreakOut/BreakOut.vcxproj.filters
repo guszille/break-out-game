@@ -54,6 +54,9 @@
     <ClCompile Include="engine\PowerUp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="engine\util\TextRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine\core\Texture.h">
@@ -89,6 +92,9 @@
     <ClInclude Include="engine\PowerUp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="engine\util\TextRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\sprite_render_vs.glsl" />
@@ -101,5 +107,7 @@
     <None Include="shaders\particle_render_fs.glsl" />
     <None Include="shaders\postprocess_render_fs.glsl" />
     <None Include="shaders\postprocess_render_vs.glsl" />
+    <None Include="shaders\text_render_vs.glsl" />
+    <None Include="shaders\text_render_fs.glsl" />
   </ItemGroup>
 </Project>

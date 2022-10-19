@@ -5,6 +5,7 @@ GameObject* g_Player;
 BallObject* g_Ball;
 ParticleGenerator* g_ParticleGenerator;
 PostProcessor* g_Effects;
+TextRenderer* g_TextRenderer;
 
 const glm::vec2 g_PlayerSize(100.0f, 20.0f);
 const float g_PlayerVelocity(500.0f);
@@ -13,8 +14,10 @@ const float g_BallRadius = 12.5f;
 
 float g_ShakeTime = 0.0f;
 
+irrklang::ISoundEngine* g_SoundEngine = irrklang::createIrrKlangDevice();
+
 Game::Game(unsigned int width, unsigned int height)
-	: m_ScreenWidth(width), m_ScreenHeight(height), m_KeysPressed(), m_State(GameState::ACTIVE), m_CurrentLevel(0)
+	: m_ScreenWidth(width), m_ScreenHeight(height), m_KeysPressed(), m_KeysProcessed(), m_State(GameState::ON_MENU), m_CurrentLevel(0), m_Lives(3)
 {
 }
 
@@ -25,6 +28,7 @@ Game::~Game()
 	delete g_Ball;
 	delete g_ParticleGenerator;
 	delete g_Effects;
+	delete g_TextRenderer;
 }
 
 void Game::setup()
@@ -34,6 +38,7 @@ void Game::setup()
 	ShaderProgram spriteRenderSP("shaders/sprite_render_vs.glsl", "shaders/sprite_render_fs.glsl");
 	ShaderProgram particleRenderSP("shaders/particle_render_vs.glsl", "shaders/particle_render_fs.glsl");
 	ShaderProgram effectsRenderSP("shaders/postprocess_render_vs.glsl", "shaders/postprocess_render_fs.glsl");
+	ShaderProgram textRenderSP("shaders/text_render_vs.glsl", "shaders/text_render_fs.glsl");
 
 	spriteRenderSP.bind();
 	spriteRenderSP.setUniformMatrix4fv("uProjectionMatrix", projectionMatrix);
@@ -48,6 +53,7 @@ void Game::setup()
 	ResourceManager::setShaderProgram("particleRenderSP", particleRenderSP);
 	ResourceManager::setShaderProgram("particleRenderSP", particleRenderSP);
 	ResourceManager::setShaderProgram("effectsRenderSP", effectsRenderSP);
+	ResourceManager::setShaderProgram("textRenderSP", textRenderSP);
 
 	Texture awesomefaceTex("textures/awesomeface.png");
 	Texture backgroundTex("textures/background.jpg");
@@ -105,11 +111,46 @@ void Game::setup()
 	g_ParticleGenerator = new ParticleGenerator(particleRenderSP, paddleTex, 500);
 
 	g_Effects = new PostProcessor(effectsRenderSP, m_ScreenWidth, m_ScreenHeight);
+
+	g_TextRenderer = new TextRenderer(m_ScreenWidth, m_ScreenHeight);
+	g_TextRenderer->load("fonts/ocraext.ttf", 24);
+
+	g_SoundEngine->play2D("audio/breakout.mp3", true);
 }
 
 void Game::processInput(float deltaTime)
 {
-	if (m_State == GameState::ACTIVE)
+	if (m_State == GameState::ON_MENU)
+	{
+		if (m_KeysPressed[GLFW_KEY_ENTER] && !m_KeysProcessed[GLFW_KEY_ENTER])
+		{
+			m_State = GameState::ACTIVE;
+
+			m_KeysProcessed[GLFW_KEY_ENTER] = true;
+		}
+
+		if (m_KeysPressed[GLFW_KEY_W] && !m_KeysProcessed[GLFW_KEY_W])
+		{
+			m_CurrentLevel = (m_CurrentLevel + 1) % 4;
+
+			m_KeysProcessed[GLFW_KEY_W] = true;
+		}
+
+		if (m_KeysPressed[GLFW_KEY_S] && !m_KeysProcessed[GLFW_KEY_S])
+		{
+			if (m_CurrentLevel > 0)
+			{
+				m_CurrentLevel = m_CurrentLevel - 1;
+			}
+			else
+			{
+				m_CurrentLevel = 3;
+			}
+
+			m_KeysProcessed[GLFW_KEY_S] = true;
+		}
+	}
+	else if (m_State == GameState::ACTIVE)
 	{
 		float velocity = g_PlayerVelocity * deltaTime;
 
@@ -144,6 +185,15 @@ void Game::processInput(float deltaTime)
 			g_Ball->m_Stuck = false;
 		}
 	}
+	else if (m_State == GameState::VICTORY)
+	{
+		if (m_KeysPressed[GLFW_KEY_ENTER])
+		{
+			m_KeysProcessed[GLFW_KEY_ENTER] = true;
+			g_Effects->m_ChaosEffect = false;
+			m_State = GameState::ON_MENU;
+		}
+	}
 }
 
 void Game::update(float deltaTime)
@@ -168,14 +218,31 @@ void Game::update(float deltaTime)
 
 	if (g_Ball->m_Position.y >= m_ScreenHeight)
 	{
+		m_Lives -= 1;
+
+		if (m_Lives == 0)
+		{
+			m_State = GameState::ON_MENU;
+
+			resetLevel();
+		}
+
+		resetPlayer();
+	}
+
+	if (m_State == GameState::ACTIVE && m_Levels[m_CurrentLevel].isCompleted())
+	{
 		resetLevel();
 		resetPlayer();
+		
+		g_Effects->m_ChaosEffect = true;
+		m_State = GameState::VICTORY;
 	}
 }
 
 void Game::render()
 {
-	if (m_State == GameState::ACTIVE)
+	if (m_State == GameState::ON_MENU || m_State == GameState::ACTIVE || m_State == GameState::VICTORY)
 	{
 		Texture backgroundTex = ResourceManager::getTexture("backgroundTex");
 
@@ -203,12 +270,32 @@ void Game::render()
 
 		g_Effects->endRender();
 		g_Effects->render(glfwGetTime());
+
+		std::stringstream ss; ss << m_Lives;
+		g_TextRenderer->write("Lives: " + ss.str(), 5.0f, 5.0f, 1.0f);
+	}
+
+	if (m_State == GameState::ON_MENU)
+	{
+		g_TextRenderer->write("Press ENTER to start", 250.0f, m_ScreenHeight / 2, 1.0f);
+		g_TextRenderer->write("Press W or S to select level", 245.0f, m_ScreenHeight / 2 + 20.0f, 0.75f);
+	}
+
+	if (m_State == GameState::VICTORY)
+	{
+		g_TextRenderer->write("You WON!!!", 320.0f, m_ScreenHeight / 2 - 20.0f, 1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		g_TextRenderer->write("Press ENTER to retry or ESC to quit", 130.0f, m_ScreenHeight / 2, 1.0f, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 }
 
 void Game::setKeyState(int index, bool pressed)
 {
 	m_KeysPressed[index] = pressed;
+}
+
+void Game::setKeyProcessedState(int index, bool processed)
+{
+	m_KeysProcessed[index] = processed;
 }
 
 void Game::doCollision()
@@ -227,12 +314,16 @@ void Game::doCollision()
 					brick.m_Destroyed = true;
 
 					spawnPowerUps(brick);
+
+					g_SoundEngine->play2D("audio/bleep.mp3", false);
 				}
 				else
 				{
 					g_ShakeTime = 0.05f;
 
 					g_Effects->m_ShakeEffect = true;
+
+					g_SoundEngine->play2D("audio/solid.wav", false);
 				}
 
 				Direction direction = std::get<1>(coll);
@@ -292,6 +383,8 @@ void Game::doCollision()
 
 				powerUp.m_Destroyed = true;
 				powerUp.m_Activated = true;
+
+				g_SoundEngine->play2D("audio/powerup.wav", false);
 			}
 		}
 	}
@@ -312,11 +405,15 @@ void Game::doCollision()
 		g_Ball->m_Velocity = glm::normalize(newVelocity) * glm::length(currentVelocity);
 
 		g_Ball->m_Stuck = g_Ball->m_StickyEffect;
+
+		g_SoundEngine->play2D("audio/bleep.wav", false);
 	}
 }
 
 void Game::resetLevel()
 {
+	m_Lives = 3;
+
 	switch (m_CurrentLevel)
 	{
 	case 0:

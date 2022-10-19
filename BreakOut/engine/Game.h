@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <glad/glad.h>
@@ -9,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <irrKlang/irrKlang.h>
+
 #include "core/ShaderProgram.h"
 #include "core/Texture.h"
 
@@ -16,6 +19,7 @@
 #include "util/SpriteRenderer.h"
 #include "util/ParticleGenerator.h"
 #include "util/PostProcessor.h"
+#include "util/TextRenderer.h"
 
 #include "GameLevel.h"
 #include "GameObject.h"
@@ -46,6 +50,7 @@ public:
 	void render();
 
 	void setKeyState(int index, bool pressed);
+	void setKeyProcessedState(int index, bool processed);
 	void doCollision();
 
 	void resetLevel();
@@ -53,11 +58,13 @@ public:
 
 private:
 	unsigned int m_ScreenWidth, m_ScreenHeight;
-	bool m_KeysPressed[1024];
+	bool m_KeysPressed[1024], m_KeysProcessed[1024];
 	GameState m_State;
 
 	std::vector<GameLevel> m_Levels;
 	unsigned int m_CurrentLevel;
+
+	unsigned int m_Lives;
 
 	std::vector<PowerUp> m_PowerUps;
 

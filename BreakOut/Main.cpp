@@ -127,6 +127,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
         else if (action == GLFW_RELEASE)
         {
             g_BreakOut.setKeyState(key, false);
+            g_BreakOut.setKeyProcessedState(key, false);
         }
     }
 }
